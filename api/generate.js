@@ -11,8 +11,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    // gemini-1.5-flash -> gemini-2.5-flash (또는 gemini-3.5-flash)로 변경
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -26,15 +27,13 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    // API 응답 구조를 안전하게 확인
     if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
       const text = data.candidates[0].content.parts[0].text;
       return res.status(200).json({ result: text });
     } else {
-      // API가 오류 메시지나 차단 사유를 반환한 경우 처리
       console.error('Gemini API 응답 구조 오류:', JSON.stringify(data));
       return res.status(500).json({ 
-        error: 'Gemini API에서 올바른 응답을 받지 못했습니다. (안전 필터에 걸렸거나 프롬프트 형식이 잘못되었을 수 있습니다.)',
+        error: 'Gemini API에서 올바른 응답을 받지 못했습니다.',
         details: data 
       });
     }
