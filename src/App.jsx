@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
-// Leaflet 기본 마커 아이콘 깨짐 방지 설정
+// Firebase imports (제공해주신 설정값 및 웹 SDK 연결)
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
+
+// ③ 웹 설정값 (firebaseConfig) 연결
+const firebaseConfig = {
+  apiKey: "AIzaSyAjBunlYqgNVpbSrVeqVeJNd4bfdEQpHZE",
+  authDomain: "project-a-2041c.firebaseapp.com",
+  projectId: "project-a-2041c",
+  storageBucket: "project-a-2041c.firebasestorage.app",
+  messagingSenderId: "754719005631",
+  appId: "1:754719005631:web:1d1ced23c384d09959df0a",
+  measurementId: "G-QFYQXW5WT6"
+};
+
+// Initialize Firebase (④ 서비스 계정 키 미사용, 클라이언트 SDK 초기화)
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Leaflet 기본 마커 아이콘 설정
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -16,7 +35,6 @@ let DefaultIcon = L.icon({
 });
 L.Marker.parseHtmlTag = false;
 
-// 커스텀 브랜드 로고 마커 생성 함수
 const createBrandIcon = (brandName, color) => {
   return L.divIcon({
     className: 'custom-brand-marker',
@@ -26,7 +44,6 @@ const createBrandIcon = (brandName, color) => {
   });
 };
 
-// 현재 위치 (빨간 화살표 스타일) 마커
 const currentLocationIcon = L.divIcon({
   className: 'current-location-marker',
   html: `<div style="background-color: #ff4757; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 18px; box-shadow: 0 0 10px rgba(255, 71, 87, 0.8); border: 3px solid white;">📍</div>`,
@@ -47,7 +64,12 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [aiResult, setAiResult] = useState(null);
 
-  // 시뮬레이션 좌표 (서울 역삼동 기준 중심 좌표 및 주변 편의점들)
+  // 게시판 상태 추가
+  const [posts, setPosts] = useState([]);
+  const [author, setAuthor] = useState('');
+  const [content, setContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
   const mapCenter = [37.5006, 127.0364];
   const convenienceStores = [
     { id: 1, name: 'CU 역삼점', brand: 'CU', position: [37.5012, 127.0355], color: '#6f42c1' },
@@ -56,10 +78,38 @@ export default function App() {
     { id: 4, name: '이마트24 역삼2호점', brand: '이마트24', position: [37.4988, 127.0350], color: '#e67e22' }
   ];
 
-  // 이동 수단에 따른 가상의 경로선 좌표 (인도 중심 vs 도로 중심)
   const routePolyline = transport.includes('인도') 
-    ? [[37.5006, 127.0364], [37.5009, 127.0360], [37.5012, 127.0355]] // 구불구불한 골목/인도 경로
-    : [[37.5006, 127.0364], [37.5000, 127.0380], [37.4995, 127.0378]]; // 넓은 대로/차도 중심 경로
+    ? [[37.5006, 127.0364], [37.5009, 127.0360], [37.5012, 127.0355]] 
+    : [[37.5006, 127.0364], [37.5000, 127.0380], [37.4995, 127.0378]]; 
+
+  // ② 앱을 열면 Firestore에 저장된 글을 불러오기 (⑤ 최신순 정렬)
+  const fetchPosts = async () => {
+    try {
+      const q = query(collection(db, "feedback_posts"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      const fetchedPosts = [];
+      querySnapshot.forEach((doc) => {
+        fetchedPosts.push({ id: doc.id, ...doc.data() });
+      });
+      setPosts(fetchedPosts);
+    } catch (err) {
+      console.error("게시글 불러오기 오류:", err);
+      try {
+        const fallbackSnapshot = await getDocs(collection(db, "feedback_posts"));
+        const fallbackPosts = [];
+        fallbackSnapshot.forEach((doc) => {
+          fallbackPosts.push({ id: doc.id, ...doc.data() });
+        });
+        setPosts(fallbackPosts);
+      } catch (e) {
+        console.error("Fallback 오류:", e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
 
   const handleAgeSubmit = (e) => {
     e.preventDefault();
@@ -92,7 +142,7 @@ export default function App() {
       물건 분류: ${category} ${category === '직접 입력하기' ? `(${customItem})` : ''}
       
       위 조건을 바탕으로 다음 항목을 상세히 분석해줘:
-      1. 가장 가까운 편의점 브랜드 (CU, GS25, 세븐일레븐, 이마트24 중 추천)
+      1. 가장 가까운 편의점 브랜드 추천
       2. 선택한 이동 수단(${transport})에 따른 맞춤형 경로 특징 설명
       3. 선택한 물건의 재고 확인 가능한 공식 사이트 안내
       4. 로또 판매 여부
@@ -120,6 +170,33 @@ export default function App() {
       setAiResult('서버와 통신 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ① 입력창에 글을 쓰고 등록 버튼을 누르면 Firebase Firestore에 저장
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    if (!author.trim() || !content.trim()) {
+      alert('작성자와 내용을 모두 입력해주세요.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, "feedback_posts"), {
+        author: author.trim(),
+        content: content.trim(),
+        createdAt: serverTimestamp()
+      });
+      setAuthor('');
+      setContent('');
+      await fetchPosts();
+      alert('의견이 성공적으로 등록되었습니다.');
+    } catch (err) {
+      console.error("게시글 등록 오류:", err);
+      alert('게시글 등록 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -194,21 +271,21 @@ export default function App() {
               </div>
             )}
 
-            {/* 실제 오픈스트리트맵(Leaflet) 지도 영역 */}
             <div className="map-container-wrapper">
-              <p className="map-desc">🗺️ 실시간 지도: 현재 위치(빨간 마커)와 주변 편의점 로고 표시 ({transport.includes('인도') ? '🟢 인도 경로 안내선' : '🔵 자동차 도로 경로 안내선'})</p>
+              <p className="map-desc">
+                🗺️ 실시간 지도: 현재 위치(빨간 마커)와 주변 편의점 로고 표시 
+                ({transport.includes('인도') ? '🟢 인도 경로 안내선' : '🔵 자동차 도로 경로 안내선'})
+              </p>
               <div style={{ height: '320px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
                 <MapContainer center={mapCenter} zoom={16} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
-                  {/* 현재 위치 마커 (빨간 화살표 느낌) */}
                   <Marker position={mapCenter} icon={currentLocationIcon}>
                     <Popup><b>현재 내 위치</b><br/>{location}</Popup>
                   </Marker>
 
-                  {/* 주변 편의점 브랜드 로고 마커들 */}
                   {convenienceStores.map(store => (
                     <Marker 
                       key={store.id} 
@@ -218,12 +295,11 @@ export default function App() {
                       <Popup>
                         <b>{store.name}</b><br/>
                         브랜드: {store.brand}<br/>
-                        이동수단 연계 경로 적용됨
+                        {transport} 맞춤 경로 적용됨
                       </Popup>
                     </Marker>
                   ))}
 
-                  {/* 이동 수단별 경로 안내 선 (인도 vs 도로) */}
                   <Polyline 
                     positions={routePolyline} 
                     color={transport.includes('인도') ? '#2ecc71' : '#3498db'} 
@@ -235,7 +311,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* 공식 재고 확인 바로가기 버튼 */}
             <div className="stock-links-section">
               <p>🔗 브랜드별 공식 재고 조회 바로가기</p>
               <div className="link-buttons">
@@ -262,6 +337,60 @@ export default function App() {
               </div>
             </div>
           )}
+
+          {/* 사용자 의견 게시판 섹션 (요청 조건 반영 완료) */}
+          <div className="feedback-board-section" style={{ marginTop: '30px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
+            <h3>💬 사용자 의견 게시판</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666' }}>앱 사용 소감이나 개선 의견을 자유롭게 남겨주세요!</p>
+            
+            {/* 글 작성 입력 폼 */}
+            <form onSubmit={handlePostSubmit} style={{ marginBottom: '20px', background: '#f9f9f9', padding: '15px', borderRadius: '8px' }}>
+              <div className="form-group" style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '0.9rem' }}>작성자 이름:</label>
+                <input
+                  type="text"
+                  placeholder="이름 또는 닉네임 입력"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '0.9rem' }}>의견 내용:</label>
+                <textarea
+                  placeholder="의견을 입력해주세요"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  rows="3"
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', resize: 'vertical' }}
+                  required
+                />
+              </div>
+              <button type="submit" disabled={submitting} style={{ backgroundColor: '#28a745', marginTop: '5px' }}>
+                {submitting ? '등록 중...' : '의견 등록하기'}
+              </button>
+            </form>
+
+            {/* ②, ⑤ 기존 게시판 목록 영역 (최신순 보여주기) */}
+            <div className="board-list-area">
+              <h4 style={{ marginBottom: '10px', fontSize: '1rem' }}>📋 등록된 의견 목록 (최신순)</h4>
+              {posts.length === 0 ? (
+                <p style={{ color: '#888', fontSize: '0.9rem', fontStyle: 'italic' }}>아직 등록된 의견이 없습니다. 첫 번째 의견을 남겨주세요!</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {posts.map((post) => (
+                    <div key={post.id} style={{ background: '#fff', border: '1px solid #e1e4e8', padding: '12px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.85rem', color: '#555' }}>
+                        <b>👤 {post.author}</b>
+                        <span>{post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleString() : '방금 전'}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.95rem', color: '#222', whiteSpace: 'pre-wrap' }}>{post.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
