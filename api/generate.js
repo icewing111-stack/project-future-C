@@ -26,14 +26,20 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
-    if (data.candidates && data.candidates[0].content) {
+    // API 응답 구조를 안전하게 확인
+    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
       const text = data.candidates[0].content.parts[0].text;
       return res.status(200).json({ result: text });
     } else {
-      throw new Error('Gemini API 응답 형식 오류');
+      // API가 오류 메시지나 차단 사유를 반환한 경우 처리
+      console.error('Gemini API 응답 구조 오류:', JSON.stringify(data));
+      return res.status(500).json({ 
+        error: 'Gemini API에서 올바른 응답을 받지 못했습니다. (안전 필터에 걸렸거나 프롬프트 형식이 잘못되었을 수 있습니다.)',
+        details: data 
+      });
     }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'AI 응답을 생성하는 중 오류가 발생했습니다.' });
+    console.error('서버 통신 에러:', error);
+    return res.status(500).json({ error: 'AI 응답을 생성하는 중 서버 오류가 발생했습니다.' });
   }
 }
