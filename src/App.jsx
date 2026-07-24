@@ -1,14 +1,13 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
-// Firebase imports (제공해주신 설정값 및 웹 SDK 연결)
+// Firebase imports
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
 
-// ③ 웹 설정값 (firebaseConfig) 연결
 const firebaseConfig = {
   apiKey: "AIzaSyAjBunlYqgNVpbSrVeqVeJNd4bfdEQpHZE",
   authDomain: "project-a-2041c.firebaseapp.com",
@@ -19,11 +18,9 @@ const firebaseConfig = {
   measurementId: "G-QFYQXW5WT6"
 };
 
-// Initialize Firebase (④ 서비스 계정 키 미사용, 클라이언트 SDK 초기화)
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Leaflet 기본 마커 아이콘 설정
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -64,7 +61,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [aiResult, setAiResult] = useState(null);
 
-  // 게시판 상태 추가
   const [posts, setPosts] = useState([]);
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
@@ -82,7 +78,6 @@ export default function App() {
     ? [[37.5006, 127.0364], [37.5009, 127.0360], [37.5012, 127.0355]] 
     : [[37.5006, 127.0364], [37.5000, 127.0380], [37.4995, 127.0378]]; 
 
-  // ② 앱을 열면 Firestore에 저장된 글을 불러오기 (⑤ 최신순 정렬)
   const fetchPosts = async () => {
     try {
       const q = query(collection(db, "feedback_posts"), orderBy("createdAt", "desc"));
@@ -173,7 +168,6 @@ export default function App() {
     }
   };
 
-  // ① 입력창에 글을 쓰고 등록 버튼을 누르면 Firebase Firestore에 저장
   const handlePostSubmit = async (e) => {
     e.preventDefault();
     if (!author.trim() || !content.trim()) {
@@ -212,7 +206,7 @@ export default function App() {
       {step === 1 ? (
         <div className="age-card">
           <h2>편의점 스마트 길찾기</h2>
-          <p>원활한 맞춤형 서비스 이용을 위해 연령을 입력해 주세요.</p>
+          <p style={{ color: '#666', marginBottom: '20px' }}>원활한 맞춤형 서비스 이용을 위해 연령을 입력해 주세요.</p>
           <form onSubmit={handleAgeSubmit}>
             <input
               type="number"
@@ -228,7 +222,7 @@ export default function App() {
         <div className="main-card">
           <h2>편의점 통합 길찾기 & 재고 도우미</h2>
           
-          <form onSubmit={handleSearch} className="search-form">
+          <form onSubmit={handleSearch} className="search-form" style={{ marginTop: '20px' }}>
             <div className="form-group">
               <label>📍 현재 위치 입력:</label>
               <input
@@ -276,7 +270,7 @@ export default function App() {
                 🗺️ 실시간 지도: 현재 위치(빨간 마커)와 주변 편의점 로고 표시 
                 ({transport.includes('인도') ? '🟢 인도 경로 안내선' : '🔵 자동차 도로 경로 안내선'})
               </p>
-              <div style={{ height: '320px', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
+              <div style={{ height: '320px', width: '100%', borderRadius: '10px', overflow: 'hidden', border: '1px solid #dcdde1' }}>
                 <MapContainer center={mapCenter} zoom={16} style={{ height: '100%', width: '100%' }}>
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -329,23 +323,21 @@ export default function App() {
 
           {aiResult && (
             <div className="result-box">
-              <h3>💡 AI 종합 분석 및 추천 결과</h3>
+              <h3 style={{ marginTop: 0, color: '#2c3e50' }}>💡 AI 종합 분석 및 추천 결과</h3>
               <div className="result-content">
                 {aiResult.split('\n').map((line, idx) => (
-                  <p key={idx}>{line}</p>
+                  <p key={idx} style={{ margin: '4px 0' }}>{line}</p>
                 ))}
               </div>
             </div>
           )}
 
-          {/* 사용자 의견 게시판 섹션 (요청 조건 반영 완료) */}
-          <div className="feedback-board-section" style={{ marginTop: '30px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
-            <h3>💬 사용자 의견 게시판</h3>
-            <p style={{ fontSize: '0.9rem', color: '#666' }}>앱 사용 소감이나 개선 의견을 자유롭게 남겨주세요!</p>
+          <div className="feedback-board-section" style={{ marginTop: '35px', borderTop: '2px solid #edf2f7', paddingTop: '25px' }}>
+            <h3 style={{ color: '#2c3e50', marginBottom: '5px' }}>💬 사용자 의견 게시판</h3>
+            <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '15px' }}>앱 사용 소감이나 개선 의견을 자유롭게 남겨주세요!</p>
             
-            {/* 글 작성 입력 폼 */}
-            <form onSubmit={handlePostSubmit} style={{ marginBottom: '20px', background: '#f9f9f9', padding: '15px', borderRadius: '8px' }}>
-              <div className="form-group" style={{ marginBottom: '10px' }}>
+            <form onSubmit={handlePostSubmit} style={{ marginBottom: '25px', background: '#f8f9fa', padding: '20px', borderRadius: '10px', border: '1px solid #edf2f7' }}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
                 <label style={{ fontSize: '0.9rem' }}>작성자 이름:</label>
                 <input
                   type="text"
@@ -355,36 +347,35 @@ export default function App() {
                   required
                 />
               </div>
-              <div className="form-group" style={{ marginBottom: '10px' }}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
                 <label style={{ fontSize: '0.9rem' }}>의견 내용:</label>
                 <textarea
                   placeholder="의견을 입력해주세요"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   rows="3"
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '1rem', resize: 'vertical' }}
+                  style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #dcdde1', fontSize: '1rem', resize: 'vertical', boxSizing: 'border-box' }}
                   required
                 />
               </div>
-              <button type="submit" disabled={submitting} style={{ backgroundColor: '#28a745', marginTop: '5px' }}>
+              <button type="submit" disabled={submitting} style={{ backgroundColor: '#27ae60', marginTop: '5px' }}>
                 {submitting ? '등록 중...' : '의견 등록하기'}
               </button>
             </form>
 
-            {/* ②, ⑤ 기존 게시판 목록 영역 (최신순 보여주기) */}
             <div className="board-list-area">
-              <h4 style={{ marginBottom: '10px', fontSize: '1rem' }}>📋 등록된 의견 목록 (최신순)</h4>
+              <h4 style={{ marginBottom: '12px', fontSize: '1rem', color: '#2c3e50' }}>📋 등록된 의견 목록 (최신순)</h4>
               {posts.length === 0 ? (
-                <p style={{ color: '#888', fontSize: '0.9rem', fontStyle: 'italic' }}>아직 등록된 의견이 없습니다. 첫 번째 의견을 남겨주세요!</p>
+                <p style={{ color: '#a0aec0', fontSize: '0.9rem', fontStyle: 'italic' }}>아직 등록된 의견이 없습니다. 첫 번째 의견을 남겨주세요!</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {posts.map((post) => (
-                    <div key={post.id} style={{ background: '#fff', border: '1px solid #e1e4e8', padding: '12px', borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.85rem', color: '#555' }}>
+                    <div key={post.id} style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '15px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', color: '#4a5568' }}>
                         <b>👤 {post.author}</b>
                         <span>{post.createdAt?.toDate ? new Date(post.createdAt.toDate()).toLocaleString() : '방금 전'}</span>
                       </div>
-                      <p style={{ margin: 0, fontSize: '0.95rem', color: '#222', whiteSpace: 'pre-wrap' }}>{post.content}</p>
+                      <p style={{ margin: 0, fontSize: '0.95rem', color: '#2d3748', whiteSpace: 'pre-wrap' }}>{post.content}</p>
                     </div>
                   ))}
                 </div>

@@ -14,55 +14,62 @@ body {
 }
 
 .app-container.large-font {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
 }
 
 .app-container.large-font input,
 .app-container.large-font select,
 .app-container.large-font button {
-  font-size: 1.3rem;
-  padding: 12px;
+  font-size: 1.2rem;
+  padding: 14px;
 }
 
 .age-card, .main-card {
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  padding: 35px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   width: 100%;
-  max-width: 700px;
+  max-width: 720px;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
   display: flex;
   flex-direction: column;
 }
 
 .form-group label {
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
-input, select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+input, select, textarea {
+  padding: 12px;
+  border: 1px solid #dcdde1;
+  border-radius: 8px;
   font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #007bff;
+  outline: none;
 }
 
 button {
   background-color: #007bff;
   color: white;
   border: none;
-  pkg: 12px;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 14px;
+  border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
   width: 100%;
   margin-top: 10px;
+  transition: background-color 0.2s;
 }
 
 button:hover {
@@ -70,62 +77,64 @@ button:hover {
 }
 
 .map-container-wrapper {
-  margin: 15px 0;
+  margin: 20px 0;
 }
 
 .map-desc {
   font-size: 0.9rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 10px;
 }
 
 .stock-links-section {
-  margin: 15px 0;
-  background: #fff3cd;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #ffeeba;
+  margin: 20px 0;
+  background: #fff8e1;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #ffe0b2;
 }
 
 .stock-links-section p {
-  margin: 0 0 8px 0;
-  font-weight: bold;
+  margin: 0 0 10px 0;
+  font-weight: 600;
   font-size: 0.95rem;
-  color: #856404;
+  color: #f57f17;
 }
 
 .link-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
 .stock-btn {
   display: block;
-  background-color: #28a745;
+  background-color: #27ae60;
   color: white;
   text-align: center;
-  padding: 8px;
-  border-radius: 5px;
+  padding: 10px;
+  border-radius: 6px;
   text-decoration: none;
   font-size: 0.9rem;
-  font-weight: bold;
+  font-weight: 600;
+  transition: background-color 0.2s;
 }
 
 .stock-btn:hover {
-  background-color: #218838;
+  background-color: #219653;
 }
 
 .result-box {
-  margin-top: 20px;
+  margin-top: 25px;
   background: #f8f9fa;
-  padding: 15px;
-  border-left: 5px solid #28a745;
-  border-radius: 4px;
+  padding: 20px;
+  border-left: 5px solid #27ae60;
+  border-radius: 6px;
 }
 
 .result-content {
   white-space: pre-line;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #333;
 }
